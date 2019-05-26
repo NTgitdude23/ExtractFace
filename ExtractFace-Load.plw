@@ -7,8 +7,8 @@
 # SourceForge             : https://sourceforge.net/p/extractface
 # GitHub                  : https://github.com/arioux/ExtractFace
 # Creation                : 2019-03-16
-# Modified                : 2019-04-13
-my $VERSION               = '7.0.1';
+# Modified                : 2019-05-26
+my $VERSION               = '7.0.2';
 # Author                  : Alain Rioux (admin@le-tools.com)
 #
 # Copyright (C) 2015-2019  Alain Rioux (le-tools.com)
@@ -44,6 +44,7 @@ use Future::HTTP::Tiny;
 use Chrome::DevToolsProtocol::Transport::AnyEvent;
 use WWW::Mechanize::Chrome;
 use HTML::DOM;
+use HTML::Entities;
 use Win32::API();
 use Win32::GUI;
 use Win32::GUI qw( WS_POPUP WS_CAPTION WS_THICKFRAME WS_EX_TOPMOST );
@@ -1165,6 +1166,7 @@ sub loadDumpFriends
       foreach my $link (@links) {
         if (my $url	 = $link->{attributes}->{href} and my $name = $link->{attributes}->{name}) {
           $url =~ s/&amp;/&/g;
+          $url =~ s/sk=wall&//g;
           my $cat = encode($CONFIG{'CHARSET'}, $name);
           $cat =~ s/[\<\>\:\"\/\\\|\?\*\.]/_/g;
           $categories{$cat}{name} = $name;
@@ -1904,7 +1906,8 @@ sub debug
 {
   # Local variables
   my ($refMsg) = @_;
-  my $dateStr = &formatDate(time);  
+  my $dateStr  = &formatDate(time);
+  $refMsg      = decode_entities($refMsg);
   # Save error msg in debug log file
 	my $fhLog;
   if (-e $DEBUG_FILE) { open($fhLog,">>$DEBUG_FILE"); }

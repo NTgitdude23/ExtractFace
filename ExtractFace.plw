@@ -8,8 +8,8 @@
 # SourceForge		: https://sourceforge.net/p/extractface
 # GitHub				: https://github.com/arioux/ExtractFace
 # Creation			: 2015-08-01
-# Modified			: 2019-04-13
-my $VERSION			= "7.0.1";
+# Modified			: 2019-05-26
+my $VERSION			= "7.0.2";
 # Author				: Alain Rioux (admin@le-tools.com)
 #
 # Copyright (C) 2015-2019  Alain Rioux (le-tools.com)
@@ -32,6 +32,7 @@ my $VERSION			= "7.0.1";
 #------------------------------------------------------------------------------#
 use strict;
 use warnings;
+use Fcntl qw(:flock);
 use threads;
 use threads::shared;
 use utf8;
@@ -537,6 +538,8 @@ $winConfig->AddCheckbox(  	-name        => 'chDelTempFiles'      ,
 #------------------------------------------------------------------------------#
 # Starting program
 #------------------------------------------------------------------------------#
+open our $PROG_INSTANCE, '<', $0 or die $!;
+flock $PROG_INSTANCE, LOCK_EX|LOCK_NB or die "Program already running...";
 # Center the splash and show it
 $splash->Center();
 $splash->Show();
@@ -1330,14 +1333,14 @@ sub debug
 {
   # Local variables
   my ($refMsg) = @_;
-  my $dateStr = &formatDate(time);  
+  my $dateStr  = &formatDate(time);
   # Save error msg in debug log file
 	my $fhLog;
   if (-e $DEBUG_FILE) { open($fhLog,">>$DEBUG_FILE"); }
   else                { open($fhLog,">$DEBUG_FILE");  }
   flock($fhLog, 2);
   print $fhLog "$dateStr\t[ExtractFace.exe]\t$refMsg\n";
-  close($fhLog);  
+  close($fhLog);
 
 }  #--- End debug
 

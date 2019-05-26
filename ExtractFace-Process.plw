@@ -7,8 +7,8 @@
 # SourceForge             : https://sourceforge.net/p/extractface
 # GitHub                  : https://github.com/arioux/ExtractFace
 # Creation                : 2015-08-01
-# Modified                : 2019-04-13
-my $VERSION               = '7.0.1';
+# Modified                : 2019-05-26
+my $VERSION               = '7.0.2';
 # Author                  : Alain Rioux (admin@le-tools.com)
 #
 # Copyright (C) 2015-2018  Alain Rioux (le-tools.com)
@@ -434,7 +434,7 @@ sub dumpAlbums
   }
   $$refDbh->commit();
   $$refDbh->disconnect();
-  $$refMech->get($$refInfos{startingURL} ) if $$refInfos{incIcons};
+  $$refMech->get($$refInfos{startingURL} ) if $$refInfos{incSmallPics} or $$refInfos{incLargePics} or $$refInfos{incPublishDate};
 
 }  #--- End dumpAlbums
 
@@ -1076,6 +1076,12 @@ sub dlAlbumFiles
       while (!-e $smallPath and $count < 10) { # Try to save the image 10 times
         $$refMechAlbum->get($$entry[2]);
         $$refMechAlbum->saveResources_future(target_file => $smallPath, target_dir  => $albumPath)->get();
+        if (my $content = $$refMechAlbum->{response}->{_content}) {
+          open(IMG, ">$smallPath");
+          binmode(IMG);
+          print IMG $content;
+          close(IMG);
+        }
         $count++;
       }
       $smallRelPath = $smallPath =~ s/\Q$$refInfos{saveDir}\E\\/\.\//r;
@@ -1091,6 +1097,12 @@ sub dlAlbumFiles
         $$refMechAlbum->get($$entry[4]);
         sleep(1);
         $$refMechAlbum->saveResources_future(target_file => $largePath, target_dir  => $albumPath)->get();
+        if (my $content = $$refMechAlbum->{response}->{_content}) {
+          open(IMG, ">$largePath");
+          binmode(IMG);
+          print IMG $content;
+          close(IMG);
+        }
         $count++;
       }
       $largeRelPath = $largePath =~ s/\Q$$refInfos{saveDir}\E\\/\.\//r;
@@ -1714,6 +1726,12 @@ sub dlCommentsImg
         $$refMech->get($$entry[0]);
         sleep($$refInfos{timeToWait});
         $$refMech->saveResources_future(target_file => $path, target_dir  => $imagePath)->get();
+        if (my $content = $$refMech->{response}->{_content}) {
+          open(IMG, ">$path");
+          binmode(IMG);
+          print IMG $content;
+          close(IMG);
+        }
         $maxAttempts--;
       }
       $sthCommentsFilesUpd->execute($path, $relPath, $$entry[0]);
@@ -1890,7 +1908,13 @@ sub dlProfilesIcons
     while (!-e $path and $maxAttempts) {
       $$refMech->get($$entry[1]);
       sleep($$refInfos{timeToWait});
-      $$refMech->saveResources_future(target_file => $path, target_dir  => $imagePath)->get();
+      $$refMech->saveResources_future(target_file => $path, target_dir => $imagePath)->get();
+      if (my $content = $$refMech->{response}->{_content}) {
+        open(IMG, ">$path");
+        binmode(IMG);
+        print IMG $content;
+        close(IMG);
+      }
       $maxAttempts--;
     }
     $sthProfilesUpd->execute($path, $relPath, $$entry[0]);
@@ -3233,7 +3257,8 @@ sub debug
 {
   # Local variables
   my ($refMsg) = @_;
-  my $dateStr = &formatDate(time);  
+  my $dateStr  = &formatDate(time);
+  $refMsg      = decode_entities($refMsg);
   # Save error msg in debug log file
 	my $fhLog;
   if (-e $DEBUG_FILE) { open($fhLog,">>$DEBUG_FILE"); }
